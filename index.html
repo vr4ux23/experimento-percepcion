@@ -48,8 +48,8 @@
     const N_ENSAYOS = 36;
     const TIEMPO_EXPOSICION = 200; 
     
-    // ¡Aquí está tu enlace insertado con precisión quirúrgica!
-    const URL_BASE_DATOS = "https://script.google.com/macros/s/AKfycbzL4fVcKl5vLA7PwuSN1r9t9uxhNTFyuJWSeWyyvrbht0Xbc894vvEjaK-u31VX2ub34Q/exec";
+    // Tu enlace nuevo y funcional
+    const URL_BASE_DATOS = "https://script.google.com/macros/s/AKfycbykImympKVNiWB7IfkoyoiWcmU0iWKcpP5i4zRPXMjaoDx4HLaU_3xy-SHGZ9WHqeJpHA/exec";
     
     let ensayo_actual = 0;
     let puntos_actuales = 0;
@@ -145,14 +145,14 @@
     function descargarYEnviar() {
         document.getElementById('mensaje-envio').innerText = "Enviando a base de datos...";
         
-        // EL TRUCO MAESTRO: Empaquetar como un formulario real invisible
-        let formData = new FormData();
-        formData.append("data", JSON.stringify(resultados));
-
+        // Método infalible: enviar como texto puro con no-cors
         fetch(URL_BASE_DATOS, {
             method: 'POST',
-            body: formData,
-            mode: 'no-cors' // <-- Esto ignora a los "guardias de seguridad" del navegador
+            mode: 'no-cors',
+            headers: {
+                'Content-Type': 'text/plain;charset=utf-8'
+            },
+            body: JSON.stringify(resultados)
         }).then(() => {
             document.getElementById('mensaje-envio').innerText = "¡Datos enviados a Google Sheets!";
         }).catch((error) => {
