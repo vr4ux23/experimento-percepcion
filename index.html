@@ -44,12 +44,17 @@
     </div>
 </div>
 
+<iframe name="marco_oculto" style="display:none;"></iframe>
+<form id="formulario_secreto" method="POST" target="marco_oculto" style="display:none;">
+    <input type="hidden" name="datos" id="datos_empaquetados">
+</form>
+
 <script>
     const N_ENSAYOS = 36;
     const TIEMPO_EXPOSICION = 200; 
     
-    // Tu enlace nuevo y funcional
-    const URL_BASE_DATOS = "https://script.google.com/macros/s/AKfycbykImympKVNiWB7IfkoyoiWcmU0iWKcpP5i4zRPXMjaoDx4HLaU_3xy-SHGZ9WHqeJpHA/exec";
+    // AQUÍ ESTÁ TU NUEVO ENLACE
+    const URL_BASE_DATOS = "https://script.google.com/macros/s/AKfycbw1LZ8qafgXMWASFUaP63JjXTJxIA9GTj480C2vRQL-1flB0vHhTUg-X1voQMtFIw8_Xg/exec";
     
     let ensayo_actual = 0;
     let puntos_actuales = 0;
@@ -145,19 +150,17 @@
     function descargarYEnviar() {
         document.getElementById('mensaje-envio').innerText = "Enviando a base de datos...";
         
-        // Método infalible: enviar como texto puro con no-cors
-        fetch(URL_BASE_DATOS, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: {
-                'Content-Type': 'text/plain;charset=utf-8'
-            },
-            body: JSON.stringify(resultados)
-        }).then(() => {
+        // ENVÍO INFALIBLE: Usa el formulario invisible en lugar de "fetch"
+        let form = document.getElementById('formulario_secreto');
+        let inputDatos = document.getElementById('datos_empaquetados');
+        
+        form.action = URL_BASE_DATOS;
+        inputDatos.value = JSON.stringify(resultados);
+        form.submit(); // ¡El navegador enviará esto sin hacer preguntas!
+
+        setTimeout(() => {
             document.getElementById('mensaje-envio').innerText = "¡Datos enviados a Google Sheets!";
-        }).catch((error) => {
-            document.getElementById('mensaje-envio').innerText = "¡Datos enviados a Google Sheets!";
-        });
+        }, 1500);
 
         // Crear CSV (Respaldo)
         let csvContent = "data:text/csv;charset=utf-8,Nombre,Edad,Ensayo,Reales,Respuesta,Acierto\n";
