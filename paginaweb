@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Experimento de Percepción</title>
+    <style>
+        body { font-family: Arial, sans-serif; display: flex; flex-direction: column; align-items: center; background-color: #f4f4f9; padding: 20px; }
+        #contenedor { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); text-align: center; max-width: 500px; width: 100%; }
+        .pantalla-negra { width: 400px; height: 300px; background-color: black; margin: 20px auto; border-radius: 5px; position: relative; }
+        input[type="text"], input[type="number"] { width: 80%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; }
+        button { width: 85%; padding: 12px; font-size: 16px; font-weight: bold; color: white; background-color: #007bff; border: none; border-radius: 5px; cursor: pointer; margin-top: 10px;}
+        button.success { background-color: #28a745; }
+        .oculto { display: none; }
+        circle { fill: white; }
+    </style>
+</head>
+<body>
+
+<div id="contenedor">
+    <div id="fase-datos">
+        <h2>Datos del Participante</h2>
+        <input type="text" id="nombre" placeholder="Nombre (Ej: Juan Pérez)">
+        <input type="number" id="edad" placeholder="Edad (Ej: 21)">
+        <br>
+        <button class="success" onclick="iniciarExperimento()">CONTINUAR</button>
+        <p id="error-datos" style="color: red; display: none;">Por favor llena tus datos</p>
+    </div>
+
+    <div id="fase-experimento" class="oculto">
+        <h2 id="titulo-instrucciones">¡EXPERIMENTO DE PERCEPCIÓN!</h2>
+        <p id="subtitulo-instrucciones">Haz clic en el cuadro de texto, ve los puntos y escribe el número + Enter.</p>
+        
+        <div id="pantalla" class="pantalla-negra"></div>
+        
+        <button id="btn-empezar" onclick="cicloEnsayo()">EMPEZAR</button>
+        <input type="number" id="respuesta" class="oculto" placeholder="Escribe aquí y presiona Enter..." disabled>
+        
+        <div id="zona-descarga" class="oculto">
+            <h2 style="color: green;">¡Prueba terminada!</h2>
+            <button class="success" onclick="descargarYEnviar()">DESCARGAR RESULTADOS (.CSV)</button>
+            <p id="mensaje-envio" style="color: gray; font-size: 12px; margin-top: 10px;"></p>
+        </div>
+    </div>
+</div>
+
+<script>
+    const N_ENSAYOS = 36;
+    const TIEMPO_EXPOSICION = 200; // 200 milisegundos
+    const URL_BASE_DATOS = "https://script.google.com/macros/s/AKfycbyPi-Zao5aRO_Aeg7bEMWr-XrCa3p1K3R1H6HqAkp1qZj1v67JYBJ5TeEMwm044Y1pTQA/exec";
+    
+    let ensayo_actual = 0;
+    let puntos_actuales = 0;
+    let resultados = [];
+    let nombre_sujeto = "";
+    let edad_sujeto = "";
+
+    function iniciarExperimento() {
+        nombre_sujeto = document.getElementById('nombre').value.trim();
+        edad_sujeto = document.getElementById('edad').value.trim();
+        
+        if (nombre_sujeto === "" || edad_sujeto === "") {
+            document.getElementById('error-datos').style.display = "block";
+            return;
+        }
+        document.getElementById('fase-datos').classList.add('oculto');
+        document.getElementById('fase-experimento').classList.remove('oculto');
+    }
+
+    function dibujarPuntos(num) {
+        let pantalla = document.getElementById('pantalla');
+        if (num === 0) {
+            pantalla.innerHTML = "";
+            return;
+        }
+        
+        let svg = `<svg width="400" height="300" style="background-color: black; border-radius: 5px;">`;
+        let posiciones = [];
+        
+        while (posiciones.length < num) {
+            let x = Math.floor(Math.random() * 340) + 30;
+            let y = Math.floor(Math.random() * 240) + 30;
+            let muyCerca = posiciones.some(p => Math.sqrt(Math.pow(p.x - x, 2) + Math.pow(p.y - y, 2)) < 30);
+            if (!muyCerca) {
+                posiciones.push({x, y});
+                svg += `<circle cx="${x}" cy="${y}" r="7" />`;
+            }
+        }
+        svg += `</svg>`;
+        pantalla.innerHTML = svg;
+    }
+
+    async function cicloEnsayo() {
+        document.getElementById('btn-empezar').classList.add('oculto');
+        let inputResp = document.getElementById('respuesta');
+        inputResp.classList.remove('oculto');
+        inputResp.disabled = true;
+        inputResp.value = "";
+        
+        document.getElementById('titulo-instrucciones').innerText = `Ensayo ${ensayo_actual + 1} de ${N_ENSAYOS}`;
+        document.getElementById('subtitulo-instrucciones').innerText = "";
+
+        // 1. Pantalla negra
+        dibujarPuntos(0);
+        let esperaRandom = Math.floor(Math.random() * (1200 - 600 + 1)) + 600;
+        await new Promise(r => setTimeout(r, esperaRandom));
+
+        // 2. Mostrar puntos
+        puntos_actuales = Math.floor(Math.random() * 9) + 1;
+        dibujarPuntos(puntos_actuales);
+        
+        // 3. Esperar 200ms
+        await new Promise(r => setTimeout(r, TIEMPO_EXPOSICION));
+
+        // 4. Apagar puntos y permitir respuesta
+        dibujarPuntos(0);
+        inputResp.disabled = false;
+        inputResp.focus();
+    }
+
+    document.getElementById('respuesta').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            let valor = parseInt(this.value);
+            if (isNaN(valor)) return;
+
+            resultados.push({
+                Nombre: nombre_sujeto,
+                Edad: edad_sujeto,
+                Ensayo: ensayo_actual + 1,
+                Reales: puntos_actuales,
+                Respuesta: valor,
+                Acierto: valor === puntos_actuales ? "TRUE" : "FALSE"
+            });
+
+            ensayo_actual++;
+            if (ensayo_actual < N_ENSAYOS) {
+                cicloEnsayo();
+            } else {
+                document.getElementById('titulo-instrucciones').classList.add('oculto');
+                document.getElementById('pantalla').classList.add('oculto');
+                document.getElementById('respuesta').classList.add('oculto');
+                document.getElementById('zona-descarga').classList.remove('oculto');
+            }
+        }
+    });
+
+    function descargarYEnviar() {
+        document.getElementById('mensaje-envio').innerText = "Enviando a base de datos...";
+        
+        // Enviar a Google Sheets
+        fetch(URL_BASE_DATOS, {
+            method: 'POST',
+            body: JSON.stringify(resultados),
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+        }).then(() => {
+            document.getElementById('mensaje-envio').innerText = "¡Datos guardados en la nube!";
+        }).catch(() => {
+            document.getElementById('mensaje-envio').innerText = "Datos guardados localmente.";
+        });
+
+        // Crear CSV
+        let csvContent = "data:text/csv;charset=utf-8,Nombre,Edad,Ensayo,Reales,Respuesta,Acierto\n";
+        resultados.forEach(r => {
+            csvContent += `${r.Nombre},${r.Edad},${r.Ensayo},${r.Reales},${r.Respuesta},${r.Acierto}\n`;
+        });
+        
+        let encodedUri = encodeURI(csvContent);
+        let link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `percepcion_${nombre_sujeto}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+</script>
+
+</body>
+</html>
