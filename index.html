@@ -147,18 +147,19 @@
     function descargarYEnviar() {
         document.getElementById('mensaje-envio').innerText = "Enviando a base de datos...";
         
-        // Enviar a Google Sheets
+        // Aquí está la magia: "mode: 'no-cors'" evita que tu navegador bloquee el envío
         fetch(URL_BASE_DATOS, {
             method: 'POST',
+            mode: 'no-cors',
             body: JSON.stringify(resultados),
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+            headers: { 'Content-Type': 'application/json' }
         }).then(() => {
-            document.getElementById('mensaje-envio').innerText = "¡Datos guardados en la nube!";
-        }).catch(() => {
-            document.getElementById('mensaje-envio').innerText = "Datos guardados localmente.";
+            document.getElementById('mensaje-envio').innerText = "¡Datos enviados a Google Sheets!";
+        }).catch((error) => {
+            console.error("Error al enviar:", error);
         });
 
-        // Crear CSV
+        // Crear CSV (Respaldo)
         let csvContent = "data:text/csv;charset=utf-8,Nombre,Edad,Ensayo,Reales,Respuesta,Acierto\n";
         resultados.forEach(r => {
             csvContent += `${r.Nombre},${r.Edad},${r.Ensayo},${r.Reales},${r.Respuesta},${r.Acierto}\n`;
