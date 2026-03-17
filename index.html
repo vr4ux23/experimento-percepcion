@@ -38,23 +38,18 @@
         
         <div id="zona-descarga" class="oculto">
             <h2 style="color: green;">¡Prueba terminada!</h2>
-            <button class="success" onclick="descargarYEnviar()">DESCARGAR RESULTADOS (.CSV)</button>
-            <p id="mensaje-envio" style="color: gray; font-size: 12px; margin-top: 10px;"></p>
+            <button class="success" onclick="descargarYEnviar()">GUARDAR RESULTADOS</button>
+            <p id="mensaje-envio" style="color: gray; font-size: 14px; margin-top: 10px; font-weight: bold;"></p>
         </div>
     </div>
 </div>
-
-<iframe name="marco_oculto" style="display:none;"></iframe>
-<form id="formulario_secreto" method="POST" target="marco_oculto" style="display:none;">
-    <input type="hidden" name="datos" id="datos_empaquetados">
-</form>
 
 <script>
     const N_ENSAYOS = 36;
     const TIEMPO_EXPOSICION = 200; 
     
-    // AQUÍ ESTÁ TU NUEVO ENLACE
-    const URL_BASE_DATOS = "https://script.google.com/macros/s/AKfycbw1LZ8qafgXMWASFUaP63JjXTJxIA9GTj480C2vRQL-1flB0vHhTUg-X1voQMtFIw8_Xg/exec";
+    // AQUÍ ESTÁ TU ENLACE DE FIREBASE
+    const URL_BASE_DATOS = "https://experimento-psico-default-rtdb.firebaseio.com/resultados.json";
     
     let ensayo_actual = 0;
     let puntos_actuales = 0;
@@ -148,21 +143,33 @@
     });
 
     function descargarYEnviar() {
-        document.getElementById('mensaje-envio').innerText = "Enviando a base de datos...";
+        document.getElementById('mensaje-envio').innerText = "Guardando datos en el servidor...";
+        document.getElementById('mensaje-envio').style.color = "orange";
         
-        // ENVÍO INFALIBLE: Usa el formulario invisible en lugar de "fetch"
-        let form = document.getElementById('formulario_secreto');
-        let inputDatos = document.getElementById('datos_empaquetados');
-        
-        form.action = URL_BASE_DATOS;
-        inputDatos.value = JSON.stringify(resultados);
-        form.submit(); // ¡El navegador enviará esto sin hacer preguntas!
+        // CONEXIÓN DIRECTA Y PROFESIONAL A FIREBASE
+        fetch(URL_BASE_DATOS, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                participante: nombre_sujeto,
+                edad: edad_sujeto,
+                fecha: new Date().toISOString(),
+                datos: resultados
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('mensaje-envio').innerText = "¡Datos guardados con éxito en Firebase!";
+            document.getElementById('mensaje-envio').style.color = "green";
+        })
+        .catch(error => {
+            document.getElementById('mensaje-envio').innerText = "Error de conexión, pero tu archivo se descargará de respaldo.";
+            document.getElementById('mensaje-envio').style.color = "red";
+        });
 
-        setTimeout(() => {
-            document.getElementById('mensaje-envio').innerText = "¡Datos enviados a Google Sheets!";
-        }, 1500);
-
-        // Crear CSV (Respaldo)
+        // Descarga de respaldo por si acaso (tu CSV de siempre)
         let csvContent = "data:text/csv;charset=utf-8,Nombre,Edad,Ensayo,Reales,Respuesta,Acierto\n";
         resultados.forEach(r => {
             csvContent += `${r.Nombre},${r.Edad},${r.Ensayo},${r.Reales},${r.Respuesta},${r.Acierto}\n`;
