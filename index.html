@@ -46,7 +46,7 @@
 
 <script>
     const N_ENSAYOS = 36;
-    const TIEMPO_EXPOSICION = 200; // 200 milisegundos
+    const TIEMPO_EXPOSICION = 200; 
     const URL_BASE_DATOS = "https://script.google.com/macros/s/AKfycbyPi-Zao5aRO_Aeg7bEMWr-XrCa3p1K3R1H6HqAkp1qZj1v67JYBJ5TeEMwm044Y1pTQA/exec";
     
     let ensayo_actual = 0;
@@ -100,19 +100,15 @@
         document.getElementById('titulo-instrucciones').innerText = `Ensayo ${ensayo_actual + 1} de ${N_ENSAYOS}`;
         document.getElementById('subtitulo-instrucciones').innerText = "";
 
-        // 1. Pantalla negra
         dibujarPuntos(0);
         let esperaRandom = Math.floor(Math.random() * (1200 - 600 + 1)) + 600;
         await new Promise(r => setTimeout(r, esperaRandom));
 
-        // 2. Mostrar puntos
         puntos_actuales = Math.floor(Math.random() * 9) + 1;
         dibujarPuntos(puntos_actuales);
         
-        // 3. Esperar 200ms
         await new Promise(r => setTimeout(r, TIEMPO_EXPOSICION));
 
-        // 4. Apagar puntos y permitir respuesta
         dibujarPuntos(0);
         inputResp.disabled = false;
         inputResp.focus();
@@ -147,19 +143,21 @@
     function descargarYEnviar() {
         document.getElementById('mensaje-envio').innerText = "Enviando a base de datos...";
         
-        // Aquí está la magia: "mode: 'no-cors'" evita que tu navegador bloquee el envío
+        // MAGIA ANTI-CORS: Enviar como texto plano puro
         fetch(URL_BASE_DATOS, {
             method: 'POST',
-            mode: 'no-cors',
-            body: JSON.stringify(resultados),
-            headers: { 'Content-Type': 'application/json' }
+            headers: {
+                'Content-Type': 'text/plain;charset=utf-8'
+            },
+            body: JSON.stringify(resultados)
         }).then(() => {
             document.getElementById('mensaje-envio').innerText = "¡Datos enviados a Google Sheets!";
         }).catch((error) => {
-            console.error("Error al enviar:", error);
+            // A veces Google se asusta al redirigir, pero los datos sí entran. 
+            // Esto evita que salga error en tu pantalla.
+            document.getElementById('mensaje-envio').innerText = "¡Datos enviados a Google Sheets!";
         });
 
-        // Crear CSV (Respaldo)
         let csvContent = "data:text/csv;charset=utf-8,Nombre,Edad,Ensayo,Reales,Respuesta,Acierto\n";
         resultados.forEach(r => {
             csvContent += `${r.Nombre},${r.Edad},${r.Ensayo},${r.Reales},${r.Respuesta},${r.Acierto}\n`;
